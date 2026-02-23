@@ -12,6 +12,7 @@ export default function Chart({
   const seriesRef = useRef(null);
   const dataRef = useRef([]);
   const cloudSeriesRef = useRef([]);
+  const actualSeriesRef = useRef(null);
 
   useEffect(() => {
     if (!chartRef.current) return;
@@ -22,7 +23,7 @@ export default function Chart({
       layout: {
         background: { color: "#0a0e17" },
         textColor: "#4a5568",
-        fontFamily: "'Plus Jakarta Sans', sans-serif",
+        fontFamily: "'Outfit', sans-serif",
         fontSize: 11,
       },
       grid: {
@@ -81,6 +82,7 @@ export default function Chart({
     };
   }, []);
 
+  // Load candle data
   useEffect(() => {
     if (!seriesRef.current || !data.length) return;
     const formatted = data
@@ -107,14 +109,26 @@ export default function Chart({
     chartInstance.current.timeScale().fitContent();
   }, [data]);
 
+  // Draw prediction cloud + actual price line
   useEffect(() => {
     if (!chartInstance.current) return;
+
+    // Remove old cloud series
     cloudSeriesRef.current.forEach((s) => {
       try {
         chartInstance.current.removeSeries(s);
       } catch {}
     });
     cloudSeriesRef.current = [];
+
+    // Remove old actual price line
+    if (actualSeriesRef.current) {
+      try {
+        chartInstance.current.removeSeries(actualSeriesRef.current);
+      } catch {}
+      actualSeriesRef.current = null;
+    }
+
     if (!patternResult || !patternResult.cloud || !dataRef.current.length)
       return;
     if (selectedIndex == null || selectedIndex >= dataRef.current.length)
@@ -122,11 +136,16 @@ export default function Chart({
 
     const baseTime = dataRef.current[selectedIndex].time;
     const basePrice = dataRef.current[selectedIndex].close;
+
+    // Estimate candle interval
     let candleInterval = 86400;
-    if (dataRef.current.length > 1)
+    if (dataRef.current.length > 1) {
       candleInterval = dataRef.current[1].time - dataRef.current[0].time;
+    }
+
     const toPrice = (pct) => basePrice * (1 + pct / 100);
 
+    // Draw cloud lines
     const lines = [
       {
         data: patternResult.cloud.map((c) => ({
@@ -187,6 +206,37 @@ export default function Chart({
       s.setData(l.data);
       cloudSeriesRef.current.push(s);
     });
+
+    // Draw actual price line (what really happened after the selected candle)
+    const cloudSteps = patternResult.cloud.length;
+    const actualData = [];
+
+    for (let step = 0; step <= cloudSteps; step++) {
+      const dataIdx = selectedIndex + step;
+      if (dataIdx >= dataRef.current.length) break;
+
+      const candle = dataRef.current[dataIdx];
+      const time = baseTime + step * candleInterval;
+
+      actualData.push({
+        time,
+        value: candle.close,
+      });
+    }
+
+    if (actualData.length > 1) {
+      const actualSeries = chartInstance.current.addLineSeries({
+        color: "#f59e0b",
+        lineWidth: 2,
+        lineStyle: 0,
+        crosshairMarkerVisible: false,
+        priceLineVisible: false,
+        lastValueVisible: false,
+      });
+      actualSeries.setData(actualData);
+      actualSeriesRef.current = actualSeries;
+      cloudSeriesRef.current.push(actualSeries);
+    }
   }, [patternResult, selectedIndex]);
 
   return <div ref={chartRef} className="w-full" />;
