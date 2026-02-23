@@ -8,7 +8,7 @@ import DocsPage from "./pages/DocsPage.jsx";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <BrowserRouter>
+    <BrowserRouter basename="/OMBcast">
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/app" element={<AppPage />} />

@@ -5,7 +5,7 @@ import Chart from "../components/Chart";
 import PatternPanel from "../components/PatternPanel";
 import BacktestPanel from "../components/BacktestPanel";
 
-const API = "http://127.0.0.1:8000";
+const API = "https://ombcast-production.up.railway.app";
 
 function DataModal({ onDataLoaded, onClose }) {
   const [tab, setTab] = useState("search");

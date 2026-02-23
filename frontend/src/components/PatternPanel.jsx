@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import axios from "axios";
 
-const API = "http://127.0.0.1:8000";
+const API = "https://ombcast-production.up.railway.app";
 
 const inputStyle = {
   width: "100%",
